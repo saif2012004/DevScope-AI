@@ -1,0 +1,113 @@
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+  output   = "../generated/client"
+}
+
+enum PlanType {
+  FREE
+  PRO
+}
+
+enum SubscriptionStatus {
+  INACTIVE
+  ACTIVE
+  PAST_DUE
+  CANCELLED
+}
+
+enum RepoStatus {
+  PENDING
+  INDEXING
+  INDEXED
+  FAILED
+}
+
+enum MessageRole {
+  USER
+  ASSISTANT
+}
+
+model User {
+  id                   String              @id @default(cuid())
+  clerkId              String              @unique
+  email                String              @unique
+  name                 String?
+  avatarUrl            String?
+  plan                 PlanType            @default(FREE)
+  stripeCustomerId     String?             @unique
+  stripeSubscriptionId String?             @unique
+  subscriptionStatus   SubscriptionStatus  @default(INACTIVE)
+  createdAt            DateTime            @default(now())
+  updatedAt            DateTime            @updatedAt
+  repos                Repo[]
+  chatSessions         ChatSession[]
+  usageLogs            UsageLog[]
+
+  @@map("users")
+}
+
+model Repo {
+  id             String     @id @default(cuid())
+  userId         String
+  user           User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  githubUrl      String
+  githubOwner    String
+  githubName     String
+  defaultBranch  String     @default("main")
+  isPrivate      Boolean    @default(false)
+  status         RepoStatus @default(PENDING)
+  indexedAt      DateTime?
+  totalChunks    Int        @default(0)
+  totalFiles     Int        @default(0)
+  errorMessage   String?
+  createdAt      DateTime   @default(now())
+  updatedAt      DateTime   @updatedAt
+  chatSessions   ChatSession[]
+
+  @@unique([userId, githubUrl])
+  @@map("repos")
+}
+
+model ChatSession {
+  id        String    @id @default(cuid())
+  userId    String
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  repoId    String
+  repo      Repo      @relation(fields: [repoId], references: [id], onDelete: Cascade)
+  title     String    @default("New Chat")
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  messages  Message[]
+
+  @@map("chat_sessions")
+}
+
+model Message {
+  id               String       @id @default(cuid())
+  sessionId        String
+  session          ChatSession  @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  role             MessageRole
+  content          String       @db.Text
+  sourceCitations  Json?
+  createdAt        DateTime     @default(now())
+
+  @@map("messages")
+}
+
+model UsageLog {
+  id         String   @id @default(cuid())
+  userId     String
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  action     String
+  repoId     String?
+  tokensUsed Int      @default(0)
+  createdAt  DateTime @default(now())
+
+  @@index([userId, createdAt])
+  @@map("usage_logs")
+}

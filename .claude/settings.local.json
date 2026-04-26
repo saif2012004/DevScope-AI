@@ -1,0 +1,26 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npm install *)",
+      "Bash([ -d \"E:/Carreer_efforts/DevScopeAI/apps/api/node_modules/$pkg\" ])",
+      "Bash([ -d \"E:/Carreer_efforts/DevScopeAI/apps/web/node_modules/$pkg\" ])",
+      "Bash([ -d \"E:/Carreer_efforts/DevScopeAI/node_modules/$pkg\" ])",
+      "Bash(xargs head *)",
+      "Bash(xargs cat *)",
+      "Bash(node -e ' *)",
+      "Bash(npx tsc *)",
+      "Bash(npx ts-node *)",
+      "Bash(curl -s -o /dev/null -w \"%{http_code}\" http://localhost:4000/api/health)",
+      "Bash(curl -s -o /dev/null -w \"%{http_code}\" http://localhost:4000/admin/queues)",
+      "Bash(curl -s http://localhost:4000/api/health)",
+      "Bash(curl -s -o /dev/null -w \"BullBoard HTTP status: %{http_code}\\\\n\" http://localhost:4000/admin/queues)",
+      "Bash(curl -s -X GET http://localhost:4000/api/chat/sessions -H 'Authorization: Bearer bad_token')",
+      "Bash(cat tailwind.config.ts)",
+      "Bash(cat tailwind.config.js)",
+      "Bash(read d *)",
+      "Bash(grep -E \"\\\\.env$|\\\\.env\\\\.\")",
+      "Bash(git -c user.email=saifurrehmanch104@gmail.com -c user.name=Saif commit -m ' *)",
+      "Bash(git add *)"
+    ]
+  }
+}

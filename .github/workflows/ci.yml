@@ -1,0 +1,121 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request: {}
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  lint-and-typecheck:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: npm
+          cache-dependency-path: package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Typecheck API
+        run: npx tsc --noEmit
+        working-directory: apps/api
+
+      - name: Typecheck web
+        run: npx tsc --noEmit
+        working-directory: apps/web
+
+      - name: ESLint (web)
+        run: npm run lint
+        working-directory: apps/web
+
+  test-api:
+    needs: lint-and-typecheck
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:15-alpine
+        env:
+          POSTGRES_USER: devscope
+          POSTGRES_PASSWORD: devscope
+          POSTGRES_DB: devscope_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U devscope -d devscope_test"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+      redis:
+        image: redis:7-alpine
+        ports:
+          - 6379:6379
+    env:
+      DATABASE_URL: postgresql://devscope:devscope@localhost:5432/devscope_test
+      REDIS_URL: redis://localhost:6379
+      CLERK_SECRET_KEY: sk_test_ci_placeholder
+      STRIPE_SECRET_KEY: sk_test_ci_placeholder
+      STRIPE_WEBHOOK_SECRET: whsec_ci_placeholder
+      STRIPE_PRO_PRICE_ID: price_ci_placeholder
+      PORT: 4000
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: npm
+          cache-dependency-path: package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Prisma generate
+        run: npx prisma generate
+        working-directory: packages/db
+
+      - name: Prisma db push
+        run: npx prisma db push
+        working-directory: packages/db
+
+      - name: Run API tests
+        run: npm run test
+        working-directory: apps/api
+
+  build-check:
+    needs: lint-and-typecheck
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: npm
+          cache-dependency-path: package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build API
+        run: npm run build
+        working-directory: apps/api
+
+      - name: Build web
+        run: npm run build
+        working-directory: apps/web
+        env:
+          SKIP_ENV_VALIDATION: "true"
