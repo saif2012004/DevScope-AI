@@ -68,26 +68,34 @@ export async function usage(req: Request, res: Response): Promise<void> {
       return;
     }
 
-    const user = await prisma.user.findUnique({
-      where: { clerkId },
-      include: {
-        _count: { select: { repos: true } },
-      },
-    });
-
+    const user = await prisma.user.findUnique({ where: { clerkId } });
     if (!user) {
       res.status(404).json({ error: "User not found" });
       return;
     }
 
     const monthStart = startOfCurrentUtcMonth();
-    const messagesThisMonth = await prisma.usageLog.count({
-      where: {
-        userId: user.id,
-        action: "chat_message",
-        createdAt: { gte: monthStart },
-      },
-    });
+
+    const [
+      messagesThisMonth,
+      repoCount,
+      repoAgg,
+      docsGenerated,
+      prReviewsCount,
+      complexityScoresCount,
+    ] = await Promise.all([
+      prisma.usageLog.count({
+        where: { userId: user.id, action: "chat_message", createdAt: { gte: monthStart } },
+      }),
+      prisma.repo.count({ where: { userId: user.id } }),
+      prisma.repo.aggregate({
+        where: { userId: user.id, status: "INDEXED" },
+        _sum: { totalChunks: true, totalFiles: true },
+      }),
+      prisma.generatedDoc.count({ where: { userId: user.id } }),
+      prisma.prReview.count({ where: { userId: user.id } }),
+      prisma.complexityScore.count({ where: { userId: user.id } }),
+    ]);
 
     const isPro = user.plan === PlanType.PRO;
 
@@ -95,10 +103,65 @@ export async function usage(req: Request, res: Response): Promise<void> {
       plan: user.plan,
       messagesThisMonth,
       messagesLimit: isPro ? null : 50,
-      repoCount: user._count.repos,
+      repoCount,
       repoLimit: isPro ? null : 1,
+      totalChunks: repoAgg._sum.totalChunks ?? 0,
+      totalFiles: repoAgg._sum.totalFiles ?? 0,
+      docsGenerated,
+      prReviewsCount,
+      complexityScoresCount,
       memberSince: user.createdAt,
     });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: "Internal server error" });
+  }
+}
+
+export async function activity(req: Request, res: Response): Promise<void> {
+  try {
+    const clerkId = req.auth?.userId;
+    if (!clerkId) {
+      res.status(401).json({ error: "Unauthorized" });
+      return;
+    }
+
+    const user = await prisma.user.findUnique({ where: { clerkId } });
+    if (!user) {
+      res.status(404).json({ error: "User not found" });
+      return;
+    }
+
+    const logs = await prisma.usageLog.findMany({
+      where: { userId: user.id },
+      orderBy: { createdAt: "desc" },
+      take: 10,
+      include: {
+        user: false,
+      },
+    });
+
+    const repoIds = [...new Set(logs.map((l) => l.repoId).filter(Boolean) as string[])];
+    const repos = await prisma.repo.findMany({
+      where: { id: { in: repoIds } },
+      select: { id: true, githubOwner: true, githubName: true },
+    });
+    const repoMap = new Map(repos.map((r) => [r.id, r]));
+
+    const result = logs.map((log) => {
+      const repo = log.repoId ? repoMap.get(log.repoId) : undefined;
+      return {
+        id: log.id,
+        action: log.action,
+        repoId: log.repoId,
+        repoOwner: repo?.githubOwner ?? null,
+        repoName: repo?.githubName ?? null,
+        tokensUsed: log.tokensUsed,
+        createdAt: log.createdAt,
+      };
+    });
+
+    res.json(result);
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: "Internal server error" });

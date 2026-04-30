@@ -1,3 +1,4 @@
+
 import "dotenv/config";
 import { createBullBoard } from "@bull-board/api";
 import { BullMQAdapter } from "@bull-board/api/bullMQAdapter";
@@ -10,6 +11,7 @@ import morgan from "morgan";
 import * as billingController from "./controllers/billing.controller";
 import { errorHandler } from "./middleware/errorHandler";
 import { globalRateLimiter } from "./middleware/rateLimiter";
+import { prisma } from "./lib/prisma";9
 import { routes } from "./routes";
 import { ingestionQueue } from "./services/ingestion.queue";
 import { startIngestionWorker } from "./services/ingestion.worker";
@@ -35,8 +37,14 @@ app.use(
 );
 app.use(morgan("dev"));
 
-app.get("/api/health", (_req, res) => {
-  res.json({ status: "ok", timestamp: new Date() });
+app.get("/api/health", async (_req, res) => {
+  try {
+    await prisma.$queryRaw`SELECT 1`;
+    res.json({ status: "ok", db: "connected", timestamp: new Date() });
+  } catch (err) {
+    const msg = err instanceof Error ? err.message : String(err);
+    res.status(503).json({ status: "error", db: "disconnected", detail: msg });
+  }
 });
 
 app.post(
@@ -47,8 +55,7 @@ app.post(
 
 app.use(express.json());
 app.use(globalRateLimiter);
-app.use(clerkMiddleware());
-app.use("/api", routes);
+app.use("/api", clerkMiddleware({ enableHandshake: false }), routes);
 
 app.use(errorHandler);
 

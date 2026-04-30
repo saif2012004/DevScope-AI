@@ -17,10 +17,23 @@ function subscriptionIdFromCheckoutSession(
   return null;
 }
 
+function stripeGuard(res: Response): boolean {
+  const key = process.env.STRIPE_SECRET_KEY;
+  if (!key || key.includes("placeholder") || key.includes("your_stripe")) {
+    res.status(503).json({
+      error: "Billing not configured",
+      message: "Payment processing is not set up yet.",
+    });
+    return false;
+  }
+  return true;
+}
+
 export async function createCheckoutSession(
   req: Request,
   res: Response,
 ): Promise<void> {
+  if (!stripeGuard(res)) return;
   try {
     const clerkId = req.auth?.userId;
     if (!clerkId) {
@@ -82,6 +95,7 @@ export async function createPortalSession(
   req: Request,
   res: Response,
 ): Promise<void> {
+  if (!stripeGuard(res)) return;
   try {
     const clerkId = req.auth?.userId;
     if (!clerkId) {

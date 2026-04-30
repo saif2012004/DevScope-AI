@@ -12,6 +12,14 @@ export function useRepos() {
       const res = await api.get<Repo[]>("/api/repos");
       return res.data;
     },
+    // Poll every 8s while any repo is still being indexed
+    refetchInterval: (query) => {
+      const repos = query.state.data;
+      const hasIndexing = repos?.some(
+        (r) => r.status === "PENDING" || r.status === "INDEXING",
+      );
+      return hasIndexing ? 8_000 : false;
+    },
   });
 }
 

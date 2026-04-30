@@ -15,6 +15,10 @@ import { useRepos } from "@/hooks/useRepos";
 import { cn } from "@/lib/utils";
 import type { ChatMessage } from "@/types/chat";
 
+// Stable empty array — using `= []` inline as a React Query default creates a
+// new reference every render, which would trigger the sync useEffect in a loop.
+const NO_MESSAGES: ChatMessage[] = [];
+
 // ── Inner component (uses useSearchParams) ──────────────────────────────────
 
 function ChatPageInner() {
@@ -22,6 +26,19 @@ function ChatPageInner() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const queryClient = useQueryClient();
+  const inputRef = useRef<HTMLTextAreaElement>(null);
+
+  // Ctrl+K / Cmd+K focuses the chat input
+  useEffect(() => {
+    const handler = (e: KeyboardEvent) => {
+      if ((e.metaKey || e.ctrlKey) && e.key === "k") {
+        e.preventDefault();
+        inputRef.current?.focus();
+      }
+    };
+    document.addEventListener("keydown", handler);
+    return () => document.removeEventListener("keydown", handler);
+  }, []);
 
   const { data: allRepos = [], isLoading: reposLoading } = useRepos();
   const indexedRepos = allRepos.filter((r) => r.status === "INDEXED");
@@ -52,12 +69,16 @@ function ChatPageInner() {
   );
   const deleteSession = useDeleteSession();
 
-  const { data: savedMessages = [], isLoading: messagesLoading } =
+  const { data: savedMessages = NO_MESSAGES, isLoading: messagesLoading } =
     useMessages(activeSessionId);
 
-  // Sync saved messages → display (only when not streaming)
+  // Sync saved messages → display (only when not streaming).
+  // Use the functional updater so React bails out (no re-render) when the
+  // reference hasn't actually changed.
   useEffect(() => {
-    if (!isStreaming) setMessages(savedMessages);
+    if (!isStreaming) {
+      setMessages((prev) => (prev === savedMessages ? prev : savedMessages));
+    }
   }, [savedMessages, isStreaming]);
 
   // Auto-scroll
@@ -356,6 +377,7 @@ function ChatPageInner() {
               onChange={setInputValue}
               onSubmit={handleSend}
               disabled={isStreaming || !selectedRepoId}
+              inputRef={inputRef}
             />
           )}
         </div>

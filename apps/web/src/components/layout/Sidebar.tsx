@@ -3,9 +3,11 @@
 import { useUser } from "@clerk/nextjs";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import {
+  BarChart2,
   CreditCard,
   FileText,
   GitBranch,
+  GitPullRequest,
   Home,
   MessageSquare,
   Settings,
@@ -28,6 +30,8 @@ const navItems = [
   { href: "/dashboard", label: "Dashboard", icon: Home },
   { href: "/dashboard/repos", label: "Repositories", icon: GitBranch },
   { href: "/dashboard/chat", label: "AI Chat", icon: MessageSquare },
+  { href: "/dashboard/pr-review", label: "PR Review", icon: GitPullRequest },
+  { href: "/dashboard/complexity", label: "Complexity", icon: BarChart2 },
   { href: "/dashboard/docs", label: "Documentation", icon: FileText },
   { href: "/dashboard/billing", label: "Billing", icon: CreditCard },
   { href: "/dashboard/settings", label: "Settings", icon: Settings },

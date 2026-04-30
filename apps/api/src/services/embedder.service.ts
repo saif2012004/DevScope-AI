@@ -14,12 +14,25 @@ const voyageClient = new VoyageAIClient({
   apiKey: process.env.VOYAGE_API_KEY,
 });
 
-const EMBED_BATCH = 32;
+// Free-tier Voyage AI limits: 3 RPM · 10K TPM.
+// Each chunk header + 100 lines ≈ 1 000-1 500 tokens, so 4 chunks ≈ 5-6K tokens
+// per call stays safely under 10K TPM. A 22-second gap between calls keeps us
+// at ≤ 2.7 RPM, comfortably under the 3 RPM cap.
+const EMBED_BATCH = 4;
+const EMBED_DELAY_MS = 22_000;
 
 export async function embedTexts(texts: string[]): Promise<number[][]> {
   const results: number[][] = [];
+  const totalBatches = Math.ceil(texts.length / EMBED_BATCH);
+
   for (let i = 0; i < texts.length; i += EMBED_BATCH) {
+    const batchNum = Math.floor(i / EMBED_BATCH) + 1;
     const batch = texts.slice(i, i + EMBED_BATCH);
+
+    console.log(
+      `[embedder] Batch ${batchNum}/${totalBatches} (${batch.length} chunks)`,
+    );
+
     const res = await voyageClient.embed({
       input: batch,
       model: VOYAGE_MODEL,
@@ -27,6 +40,12 @@ export async function embedTexts(texts: string[]): Promise<number[][]> {
     });
     for (const item of res.data ?? []) {
       results.push(item.embedding ?? []);
+    }
+
+    // Rate-limit gap — skip after the final batch
+    if (i + EMBED_BATCH < texts.length) {
+      console.log(`[embedder] Waiting ${EMBED_DELAY_MS / 1000}s (Voyage AI rate limit)…`);
+      await new Promise((resolve) => setTimeout(resolve, EMBED_DELAY_MS));
     }
   }
   return results;
