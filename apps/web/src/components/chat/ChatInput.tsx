@@ -11,21 +11,24 @@ export function ChatInput({
   onSubmit,
   disabled,
   placeholder = "Ask a question about this codebase… (Enter to send, Shift+Enter for newline)",
+  inputRef: externalRef,
 }: {
   value: string;
   onChange: (v: string) => void;
   onSubmit: () => void;
   disabled: boolean;
   placeholder?: string;
+  inputRef?: React.RefObject<HTMLTextAreaElement>;
 }) {
-  const ref = useRef<HTMLTextAreaElement>(null);
+  const internalRef = useRef<HTMLTextAreaElement>(null);
+  const ref = externalRef ?? internalRef;
 
   useEffect(() => {
     const el = ref.current;
     if (!el) return;
     el.style.height = "auto";
     el.style.height = `${Math.min(el.scrollHeight, 160)}px`;
-  }, [value]);
+  }, [value, ref]);
 
   function handleKeyDown(e: KeyboardEvent<HTMLTextAreaElement>) {
     if (e.key === "Enter" && !e.shiftKey) {

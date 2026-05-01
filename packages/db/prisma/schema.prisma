@@ -47,6 +47,9 @@ model User {
   repos                Repo[]
   chatSessions         ChatSession[]
   usageLogs            UsageLog[]
+  generatedDocs        GeneratedDoc[]
+  prReviews            PrReview[]
+  complexityScores     ComplexityScore[]
 
   @@map("users")
 }
@@ -65,9 +68,12 @@ model Repo {
   totalChunks    Int        @default(0)
   totalFiles     Int        @default(0)
   errorMessage   String?
-  createdAt      DateTime   @default(now())
-  updatedAt      DateTime   @updatedAt
-  chatSessions   ChatSession[]
+  createdAt        DateTime          @default(now())
+  updatedAt        DateTime          @updatedAt
+  chatSessions     ChatSession[]
+  generatedDoc     GeneratedDoc?
+  prReviews        PrReview[]
+  complexityScores ComplexityScore[]
 
   @@unique([userId, githubUrl])
   @@map("repos")
@@ -110,4 +116,58 @@ model UsageLog {
 
   @@index([userId, createdAt])
   @@map("usage_logs")
+}
+
+model GeneratedDoc {
+  id          String   @id @default(cuid())
+  repoId      String   @unique
+  repo        Repo     @relation(fields: [repoId], references: [id], onDelete: Cascade)
+  userId      String
+  user        User     @relation(fields: [userId], references: [id])
+  content     String   @db.Text
+  tokensUsed  Int      @default(0)
+  generatedAt DateTime @default(now())
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model PrReview {
+  id         String   @id @default(cuid())
+  repoId     String
+  repo       Repo     @relation(fields: [repoId], references: [id], onDelete: Cascade)
+  userId     String
+  user       User     @relation(fields: [userId], references: [id])
+  prNumber   Int
+  prTitle    String
+  prUrl      String
+  verdict    String
+  summary    String   @db.Text
+  fullReview String   @db.Text
+  issueCount Int      @default(0)
+  tokensUsed Int      @default(0)
+  createdAt  DateTime @default(now())
+
+  @@index([repoId])
+  @@index([userId])
+}
+
+model ComplexityScore {
+  id                 String   @id @default(cuid())
+  repoId             String
+  repo               Repo     @relation(fields: [repoId], references: [id], onDelete: Cascade)
+  userId             String
+  user               User     @relation(fields: [userId], references: [id])
+  taskDescription    String   @db.Text
+  effortScore        Int
+  effortLabel        String
+  estimatedHoursMin  Int
+  estimatedHoursMax  Int
+  affectedFilesCount Int
+  risksCount         Int
+  fullResult         Json
+  tokensUsed         Int      @default(0)
+  createdAt          DateTime @default(now())
+
+  @@index([repoId])
+  @@index([userId])
 }

@@ -13,5 +13,11 @@ export default async function DashboardGroupLayout({
     redirect("/sign-in");
   }
 
-  return <DashboardLayout>{children}</DashboardLayout>;
+  return (
+    <DashboardLayout>
+      <div className="animate-in fade-in slide-in-from-bottom-2 duration-200">
+        {children}
+      </div>
+    </DashboardLayout>
+  );
 }

@@ -20,7 +20,11 @@
       "Bash(read d *)",
       "Bash(grep -E \"\\\\.env$|\\\\.env\\\\.\")",
       "Bash(git -c user.email=saifurrehmanch104@gmail.com -c user.name=Saif commit -m ' *)",
-      "Bash(git add *)"
+      "Bash(git add *)",
+      "Bash(netstat -ano)",
+      "Bash(findstr \":4000\")",
+      "Bash(curl *)",
+      "Bash(npm run *)"
     ]
   }
 }

@@ -1,8 +1,9 @@
 "use client";
 
-import { CheckCircle, Crown, Sparkles } from "lucide-react";
+import { CheckCircle, CreditCard, Crown, Sparkles } from "lucide-react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { startTransition, Suspense, useEffect, useState } from "react";
+import axios from "axios";
 
 import { PlanBadge } from "@/components/shared/PlanBadge";
 import { Spinner } from "@/components/shared/Spinner";
@@ -26,11 +27,17 @@ function BillingContent() {
   const searchParams = useSearchParams();
   const [showUpgradedAlert, setShowUpgradedAlert] = useState(false);
 
-  const { data: billing, isLoading } = useBillingStatus();
+  const { data: billing, isLoading, isError, error } = useBillingStatus();
   const checkout = useCreateCheckoutSession();
   const portal = useCreatePortalSession();
 
   const isPro = billing?.plan === "PRO";
+
+  // Stripe not configured — show neutral "coming soon" card
+  const isBillingUnavailable =
+    isError &&
+    axios.isAxiosError(error) &&
+    error.response?.status === 503;
 
   useEffect(() => {
     if (searchParams.get("upgraded") !== "true") {
@@ -66,6 +73,18 @@ function BillingContent() {
         toast.error(CHECKOUT_ERROR);
       },
     });
+  }
+
+  if (isBillingUnavailable) {
+    return (
+      <div className="mx-auto max-w-sm rounded-lg bg-muted p-6 text-center">
+        <CreditCard className="mx-auto mb-4 h-12 w-12 text-muted-foreground" strokeWidth={1.5} />
+        <h2 className="text-lg font-semibold">Billing Coming Soon</h2>
+        <p className="mt-2 text-sm text-muted-foreground">
+          Payment processing is being configured. Check back soon.
+        </p>
+      </div>
+    );
   }
 
   if (isLoading || !billing) {

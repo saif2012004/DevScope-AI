@@ -2,11 +2,14 @@
 
 import { Github, MessageSquare, Trash2 } from "lucide-react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { useEffect, useRef } from "react";
 
 import { StatusBadge } from "@/components/repos/StatusBadge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { formatRelativeTime } from "@/lib/formatRelativeTime";
+import { toast } from "@/lib/toast";
 import type { Repo } from "@/types/repo";
 
 export function RepoCard({
@@ -16,6 +19,22 @@ export function RepoCard({
   repo: Repo;
   onDelete: (repo: Repo) => void;
 }) {
+  const router = useRouter();
+  const prevStatusRef = useRef(repo.status);
+
+  useEffect(() => {
+    if (prevStatusRef.current !== "INDEXED" && repo.status === "INDEXED") {
+      toast.success(`${repo.githubOwner}/${repo.githubName} is ready!`, {
+        description: "Your repository has been indexed and is ready for AI chat.",
+        action: {
+          label: "Open Chat",
+          onClick: () => router.push(`/dashboard/chat?repoId=${repo.id}`),
+        },
+        duration: 8000,
+      });
+    }
+    prevStatusRef.current = repo.status;
+  }, [repo.status, repo.githubOwner, repo.githubName, repo.id, router]);
   const filesLabel =
     repo.totalFiles === 0 ? "—" : `${repo.totalFiles} files`;
   const chunksLabel =

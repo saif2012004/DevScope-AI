@@ -22,7 +22,7 @@ export const ingestionQueue = new Queue<IngestionJobData>("ingestion", {
   connection: redisConnection(),
   defaultJobOptions: {
     attempts: 3,
-    backoff: { type: "exponential", delay: 5_000 },
+    backoff: { type: "exponential", delay: 90_000 },
     removeOnComplete: 100,
     removeOnFail: 200,
   },

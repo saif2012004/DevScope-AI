@@ -10,6 +10,11 @@ export type UsagePayload = {
   messagesLimit: number | null;
   repoCount: number;
   repoLimit: number | null;
+  totalChunks: number;
+  totalFiles: number;
+  docsGenerated: number;
+  prReviewsCount: number;
+  complexityScoresCount: number;
   memberSince: string;
 };
 
