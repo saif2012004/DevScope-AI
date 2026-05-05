@@ -1,4 +1,9 @@
-import { embedQuery, geminiClient, GEMINI_MODEL } from "./embedder.service";
+import {
+  embedQuery,
+  geminiClient,
+  GEMINI_MODEL,
+  withGeminiRetry,
+} from "./embedder.service";
 import { VectorStore } from "./vectorStore.service";
 
 interface DocSection {
@@ -146,13 +151,17 @@ export async function generateDocumentation(
 
       const prompt = def.buildPrompt(repoOwner, repoName, context);
 
-      const stream = await geminiClient.chat.completions.create({
-        model: GEMINI_MODEL,
-        stream: true,
-        temperature: 0.3,
-        max_tokens: 1500,
-        messages: [{ role: "user", content: prompt }],
-      });
+      const stream = await withGeminiRetry(
+        () =>
+          geminiClient.chat.completions.create({
+            model: GEMINI_MODEL,
+            stream: true,
+            temperature: 0.3,
+            max_tokens: 1500,
+            messages: [{ role: "user", content: prompt }],
+          }),
+        `doc section "${def.title}"`,
+      );
 
       let content = "";
 

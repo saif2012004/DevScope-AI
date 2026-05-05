@@ -61,7 +61,7 @@ async function processIngestion(repoId: string): Promise<void> {
   store.add(chunks, embeddings);
   await store.save();
 
-  // Step 5: mark repo as indexed
+  // Step 5: mark repo as indexed (clear any stale errorMessage from prior retries)
   await prisma.repo.update({
     where: { id: repoId },
     data: {
@@ -69,6 +69,7 @@ async function processIngestion(repoId: string): Promise<void> {
       indexedAt: new Date(),
       totalFiles: fetchResult.totalFilesFetched,
       totalChunks: chunks.length,
+      errorMessage: null,
     },
   });
 

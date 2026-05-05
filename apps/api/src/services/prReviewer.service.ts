@@ -1,5 +1,10 @@
 import { detectLanguage } from "../lib/fetchRepoFiles";
-import { embedQuery, geminiClient, GEMINI_MODEL } from "./embedder.service";
+import {
+  embedQuery,
+  geminiClient,
+  GEMINI_MODEL,
+  withGeminiRetry,
+} from "./embedder.service";
 import { VectorStore } from "./vectorStore.service";
 
 export interface PRFile {
@@ -90,8 +95,8 @@ export async function reviewPR(
     files,
   } = options;
 
-  // Step 1 — Filter files
-  const filtered = files.filter((f) => !shouldSkipFile(f)).slice(0, 10);
+  // Step 1 — Filter files (cap at 5 to keep Voyage queue time reasonable: 5×22s=110s)
+  const filtered = files.filter((f) => !shouldSkipFile(f)).slice(0, 5);
   console.log(
     `[prReviewer] Reviewing ${filtered.length} of ${files.length} files in PR #${prNumber}`,
   );
@@ -177,13 +182,17 @@ The JSON must match this exact structure:
   // Step 4 — Call Gemini with json_object format
   let response: Awaited<ReturnType<typeof geminiClient.chat.completions.create>>;
   try {
-    response = await geminiClient.chat.completions.create({
-      model: GEMINI_MODEL,
-      messages: [{ role: "user", content: reviewPrompt }],
-      temperature: 0.1,
-      max_tokens: 3000,
-      response_format: { type: "json_object" },
-    });
+    response = await withGeminiRetry(
+      () =>
+        geminiClient.chat.completions.create({
+          model: GEMINI_MODEL,
+          messages: [{ role: "user", content: reviewPrompt }],
+          temperature: 0.1,
+          max_tokens: 3000,
+          response_format: { type: "json_object" },
+        }),
+      "PR review",
+    );
   } catch (err) {
     console.error("[prReviewer] Gemini call failed:", err);
     return FALLBACK_RESULT;

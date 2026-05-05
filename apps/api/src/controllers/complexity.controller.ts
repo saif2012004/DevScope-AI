@@ -2,6 +2,7 @@ import type { Request, Response } from "express";
 import { RepoStatus } from "@devscope/db";
 import { prisma } from "../lib/prisma";
 import { scoreComplexity } from "../services/complexityScorer.service";
+import { RateLimitedError } from "../services/embedder.service";
 
 export async function scoreTask(req: Request, res: Response): Promise<void> {
   try {
@@ -91,6 +92,10 @@ export async function scoreTask(req: Request, res: Response): Promise<void> {
     res.json(result);
   } catch (err) {
     console.error("[complexity/score]", err);
+    if (err instanceof RateLimitedError) {
+      res.status(429).json({ error: err.message });
+      return;
+    }
     const message =
       err instanceof Error ? err.message : "Internal server error";
     res.status(500).json({ error: message });
