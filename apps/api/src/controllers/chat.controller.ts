@@ -1,8 +1,13 @@
 import type { Request, Response } from "express";
 import { MessageRole, RepoStatus } from "@devscope/db";
 import { prisma } from "../lib/prisma";
-import { embedQuery } from "../services/embedder.service";
-import { geminiClient, GEMINI_MODEL } from "../services/embedder.service";
+import {
+  embedQuery,
+  geminiClient,
+  GEMINI_MODEL,
+  RateLimitedError,
+  withGeminiRetry,
+} from "../services/embedder.service";
 import { VectorStore } from "../services/vectorStore.service";
 
 const TOP_K = 8;
@@ -284,15 +289,19 @@ export async function streamQuery(
       contextBlocks,
     );
 
-    // 4. Stream from Gemini
-    const stream = await geminiClient.chat.completions.create({
-      model: GEMINI_MODEL,
-      stream: true,
-      messages: [
-        { role: "system", content: systemPrompt },
-        { role: "user", content: question },
-      ],
-    });
+    // 4. Stream from Gemini (with one retry on 429)
+    const stream = await withGeminiRetry(
+      () =>
+        geminiClient.chat.completions.create({
+          model: GEMINI_MODEL,
+          stream: true,
+          messages: [
+            { role: "system", content: systemPrompt },
+            { role: "user", content: question },
+          ],
+        }),
+      "chat query",
+    );
 
     let fullResponse = "";
     for await (const chunk of stream) {
@@ -341,7 +350,11 @@ export async function streamQuery(
     });
   } catch (err) {
     console.error("[chat/query]", err);
-    sendSse(res, { type: "error", message: "Failed to generate response" });
+    if (err instanceof RateLimitedError) {
+      sendSse(res, { type: "error", message: err.message });
+    } else {
+      sendSse(res, { type: "error", message: "Failed to generate response" });
+    }
   }
 
   res.end();

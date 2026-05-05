@@ -162,6 +162,8 @@ type GitHubRepoResponse = {
   description?: string | null;
 };
 
+const GH_API_TIMEOUT_MS = 20_000; // 20s per GitHub API call
+
 async function makeGitHubRequest<T>(url: string): Promise<T> {
   const headers: Record<string, string> = {
     Accept: "application/vnd.github+json",
@@ -174,7 +176,25 @@ async function makeGitHubRequest<T>(url: string): Promise<T> {
     headers.Authorization = `Bearer ${token}`;
   }
 
-  const response = await fetch(url, { headers });
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), GH_API_TIMEOUT_MS);
+
+  let response: Response;
+  try {
+    response = await fetch(url, { headers, signal: controller.signal });
+  } catch (err) {
+    // Surface the actual cause — Node's `fetch failed` is opaque otherwise
+    const cause =
+      err instanceof Error && "cause" in err && err.cause
+        ? String((err.cause as { message?: string }).message ?? err.cause)
+        : err instanceof Error ? err.message : String(err);
+    if (controller.signal.aborted) {
+      throw new Error(`GitHub fetch timed out after ${GH_API_TIMEOUT_MS / 1000}s: ${url}`);
+    }
+    throw new Error(`GitHub fetch failed for ${url} — ${cause}`);
+  } finally {
+    clearTimeout(timer);
+  }
 
   if (!response.ok) {
     const body = await response.text();
@@ -246,7 +266,23 @@ export async function fetchRepoFiles(
     const results = await Promise.allSettled(
       batch.map(async (item) => {
         const rawUrl = `https://raw.githubusercontent.com/${owner}/${repoName}/${branch}/${item.path}`;
-        const response = await fetch(rawUrl);
+        const ctrl = new AbortController();
+        const t = setTimeout(() => ctrl.abort(), GH_API_TIMEOUT_MS);
+        let response: Response;
+        try {
+          response = await fetch(rawUrl, { signal: ctrl.signal });
+        } catch (err) {
+          if (ctrl.signal.aborted) {
+            throw new Error(`Timed out fetching ${item.path}`);
+          }
+          const cause =
+            err instanceof Error && "cause" in err && err.cause
+              ? String((err.cause as { message?: string }).message ?? err.cause)
+              : err instanceof Error ? err.message : String(err);
+          throw new Error(`Failed to fetch ${item.path}: ${cause}`);
+        } finally {
+          clearTimeout(t);
+        }
         if (!response.ok) {
           throw new Error(`Failed to fetch ${item.path}: HTTP ${response.status}`);
         }

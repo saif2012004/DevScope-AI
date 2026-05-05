@@ -72,6 +72,16 @@ api.interceptors.response.use(
       return Promise.reject(error);
     }
 
+    if (status === 429) {
+      const message =
+        (data && typeof data === "object" && "error" in data
+          ? (data as { error?: string }).error
+          : null) ??
+        "AI service is rate-limited. Please wait ~60 seconds and try again.";
+      toast.error(message);
+      return Promise.reject(error);
+    }
+
     if (status >= 500) {
       toast.error("Server error. Please try again.");
       return Promise.reject(error);

@@ -1,4 +1,9 @@
-import { embedQuery, geminiClient, GEMINI_MODEL } from "./embedder.service";
+import {
+  embedQuery,
+  geminiClient,
+  GEMINI_MODEL,
+  withGeminiRetry,
+} from "./embedder.service";
 import { VectorStore } from "./vectorStore.service";
 
 export interface ComplexityResult {
@@ -47,28 +52,24 @@ export async function scoreComplexity(
 
   const store = await VectorStore.load(repoId);
 
-  // Step 1 — Three parallel vector searches
-  const [results1, results2, results3] = await Promise.all([
-    store.search(await embedQuery(taskDescription), 10),
-    store.search(
-      await embedQuery(
-        taskDescription + " configuration setup initialization dependencies",
-      ),
-      5,
-    ),
-    store.search(
-      await embedQuery(
-        taskDescription +
-          " tests testing error handling validation edge cases",
-      ),
-      5,
-    ),
-  ]);
+  // Step 1 — Three vector searches.
+  // NOTE: serialized (not Promise.all) because Voyage AI free tier is 3 RPM —
+  // the rate-limit gate in embedder.service would block parallel calls anyway.
+  const queries = [
+    taskDescription,
+    taskDescription + " configuration setup initialization dependencies",
+    taskDescription + " tests testing error handling validation edge cases",
+  ];
+  const topKs = [10, 5, 5];
+  const allResults: Awaited<ReturnType<typeof store.search>> = [];
+  for (let i = 0; i < queries.length; i++) {
+    const vec = await embedQuery(queries[i]!);
+    allResults.push(...store.search(vec, topKs[i]!));
+  }
 
   // Deduplicate by chunk id, take top 15
   const seen = new Set<string>();
-  const combined = [...results1, ...results2, ...results3];
-  const top15 = combined.filter((c) => {
+  const top15 = allResults.filter((c) => {
     if (seen.has(c.id)) return false;
     seen.add(c.id);
     return true;
@@ -137,14 +138,18 @@ Effort score guide:
 
 Only reference files you can actually see in the context. Mark files you are less certain about as changeType: uncertain.`;
 
-  // Step 4 — Call Gemini
-  const response = await geminiClient.chat.completions.create({
-    model: GEMINI_MODEL,
-    messages: [{ role: "user", content: scoringPrompt }],
-    temperature: 0.1,
-    max_tokens: 2500,
-    response_format: { type: "json_object" },
-  });
+  // Step 4 — Call Gemini (helper throws RateLimitedError on 429 after retry)
+  const response = await withGeminiRetry(
+    () =>
+      geminiClient.chat.completions.create({
+        model: GEMINI_MODEL,
+        messages: [{ role: "user", content: scoringPrompt }],
+        temperature: 0.1,
+        max_tokens: 2500,
+        response_format: { type: "json_object" },
+      }),
+    "complexity score",
+  );
 
   // Step 5 — Parse and return
   const raw = response.choices[0]?.message?.content ?? "";

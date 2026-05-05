@@ -24,7 +24,8 @@
       "Bash(netstat -ano)",
       "Bash(findstr \":4000\")",
       "Bash(curl *)",
-      "Bash(npm run *)"
+      "Bash(npm run *)",
+      "Bash(echo \"EXIT:$?\")"
     ]
   }
 }
