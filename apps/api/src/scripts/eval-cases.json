@@ -1,0 +1,43 @@
+[
+  {
+    "id": "nlp-01-summary",
+    "repo": "saif2012004/NLP_A2-Estimates-next-day-stocks-prices-",
+    "question": "What does this codebase do? Give a brief summary.",
+    "mustContain": ["forecast", "stock", "ARIMA", "LSTM"],
+    "mustCite": [],
+    "notes": "High-level: tests that retrieval+LLM produce a coherent overview hitting the main concepts."
+  },
+  {
+    "id": "nlp-02-sentiment-lib",
+    "repo": "saif2012004/NLP_A2-Estimates-next-day-stocks-prices-",
+    "question": "What sentiment analysis library does it use and how is it integrated?",
+    "mustContain": ["TextBlob"],
+    "mustCite": ["data_scraper/financial_data_scraper.py"],
+    "notes": "Specific lookup: must find the exact library + cite the exact file."
+  },
+  {
+    "id": "nlp-03-web-framework",
+    "repo": "saif2012004/NLP_A2-Estimates-next-day-stocks-prices-",
+    "question": "What web framework powers the user interface?",
+    "mustContain": ["Flask"],
+    "mustCite": [],
+    "notes": "Tech-stack identification."
+  },
+  {
+    "id": "nlp-04-database",
+    "repo": "saif2012004/NLP_A2-Estimates-next-day-stocks-prices-",
+    "question": "What database does this project use to store data?",
+    "mustContain": ["SQLite"],
+    "mustCite": [],
+    "notes": "Tech-stack identification; SQLAlchemy is acceptable too but SQLite is the must-have."
+  },
+  {
+    "id": "nlp-05-refusal",
+    "repo": "saif2012004/NLP_A2-Estimates-next-day-stocks-prices-",
+    "question": "Does this application deploy to Kubernetes? If so, where is the configuration?",
+    "mustContainAny": ["not present", "no information", "does not contain", "no kubernetes", "no k8s", "not include", "not configured", "not found"],
+    "mustNotContain": ["yes, this", "yes it does", "the kubernetes config is located", "configured in deployment.yaml"],
+    "mustCite": [],
+    "notes": "Grounded-refusal test: repo has NO k8s. Pass = model explicitly refuses or says no k8s found. mustContainAny → at least one phrase must appear (case-insensitive)."
+  }
+]

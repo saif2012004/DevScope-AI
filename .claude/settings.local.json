@@ -25,7 +25,12 @@
       "Bash(findstr \":4000\")",
       "Bash(curl *)",
       "Bash(npm run *)",
-      "Bash(echo \"EXIT:$?\")"
+      "Bash(echo \"EXIT:$?\")",
+      "PowerShell(npx -w apps/api tsc --noEmit)",
+      "PowerShell(Get-NetTCPConnection *)",
+      "Bash(gh api *)",
+      "WebFetch(domain:github.com)",
+      "WebFetch(domain:raw.githubusercontent.com)"
     ]
   }
 }

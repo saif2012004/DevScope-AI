@@ -1,9 +1,9 @@
 import { detectLanguage } from "../lib/fetchRepoFiles";
 import {
   embedQuery,
-  geminiClient,
-  GEMINI_MODEL,
-  withGeminiRetry,
+  groqClient,
+  GROQ_MODEL,
+  withGroqRetry,
 } from "./embedder.service";
 import { VectorStore } from "./vectorStore.service";
 
@@ -179,13 +179,13 @@ The JSON must match this exact structure:
   "reviewBody": "Complete Markdown review comment for GitHub. Use ## DevScope AI Review heading. Include verdict, summary, issues grouped by severity with emoji (🔴 Critical, 🟡 Warning, 🔵 Suggestion), positives section, and end with ---\\n*Review by [DevScope AI](https://devscope.ai)*"
 }`;
 
-  // Step 4 — Call Gemini with json_object format
-  let response: Awaited<ReturnType<typeof geminiClient.chat.completions.create>>;
+  // Step 4 — Call Groq with json_object format
+  let response: Awaited<ReturnType<typeof groqClient.chat.completions.create>>;
   try {
-    response = await withGeminiRetry(
+    response = await withGroqRetry(
       () =>
-        geminiClient.chat.completions.create({
-          model: GEMINI_MODEL,
+        groqClient.chat.completions.create({
+          model: GROQ_MODEL,
           messages: [{ role: "user", content: reviewPrompt }],
           temperature: 0.1,
           max_tokens: 3000,

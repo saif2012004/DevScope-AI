@@ -3,10 +3,10 @@ import { MessageRole, RepoStatus } from "@devscope/db";
 import { prisma } from "../lib/prisma";
 import {
   embedQuery,
-  geminiClient,
-  GEMINI_MODEL,
+  groqClient,
+  GROQ_MODEL,
   RateLimitedError,
-  withGeminiRetry,
+  withGroqRetry,
 } from "../services/embedder.service";
 import { VectorStore } from "../services/vectorStore.service";
 
@@ -289,11 +289,11 @@ export async function streamQuery(
       contextBlocks,
     );
 
-    // 4. Stream from Gemini (with one retry on 429)
-    const stream = await withGeminiRetry(
+    // 4. Stream from Groq (with one retry on 429)
+    const stream = await withGroqRetry(
       () =>
-        geminiClient.chat.completions.create({
-          model: GEMINI_MODEL,
+        groqClient.chat.completions.create({
+          model: GROQ_MODEL,
           stream: true,
           messages: [
             { role: "system", content: systemPrompt },

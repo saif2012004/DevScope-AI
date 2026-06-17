@@ -1,8 +1,8 @@
 import {
   embedQuery,
-  geminiClient,
-  GEMINI_MODEL,
-  withGeminiRetry,
+  groqClient,
+  GROQ_MODEL,
+  withGroqRetry,
 } from "./embedder.service";
 import { VectorStore } from "./vectorStore.service";
 
@@ -151,10 +151,10 @@ export async function generateDocumentation(
 
       const prompt = def.buildPrompt(repoOwner, repoName, context);
 
-      const stream = await withGeminiRetry(
+      const stream = await withGroqRetry(
         () =>
-          geminiClient.chat.completions.create({
-            model: GEMINI_MODEL,
+          groqClient.chat.completions.create({
+            model: GROQ_MODEL,
             stream: true,
             temperature: 0.3,
             max_tokens: 1500,

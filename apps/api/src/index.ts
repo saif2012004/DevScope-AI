@@ -11,7 +11,7 @@ import morgan from "morgan";
 import * as billingController from "./controllers/billing.controller";
 import { errorHandler } from "./middleware/errorHandler";
 import { globalRateLimiter } from "./middleware/rateLimiter";
-import { prisma } from "./lib/prisma";9
+import { prisma } from "./lib/prisma";
 import { routes } from "./routes";
 import { ingestionQueue } from "./services/ingestion.queue";
 import { startIngestionWorker } from "./services/ingestion.worker";

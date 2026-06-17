@@ -1,8 +1,8 @@
 import {
   embedQuery,
-  geminiClient,
-  GEMINI_MODEL,
-  withGeminiRetry,
+  groqClient,
+  GROQ_MODEL,
+  withGroqRetry,
 } from "./embedder.service";
 import { VectorStore } from "./vectorStore.service";
 
@@ -138,11 +138,11 @@ Effort score guide:
 
 Only reference files you can actually see in the context. Mark files you are less certain about as changeType: uncertain.`;
 
-  // Step 4 — Call Gemini (helper throws RateLimitedError on 429 after retry)
-  const response = await withGeminiRetry(
+  // Step 4 — Call Groq (helper throws RateLimitedError on 429 after retry)
+  const response = await withGroqRetry(
     () =>
-      geminiClient.chat.completions.create({
-        model: GEMINI_MODEL,
+      groqClient.chat.completions.create({
+        model: GROQ_MODEL,
         messages: [{ role: "user", content: scoringPrompt }],
         temperature: 0.1,
         max_tokens: 2500,

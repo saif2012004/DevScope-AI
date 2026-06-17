@@ -1,13 +1,13 @@
 import OpenAI from "openai";
 import { VoyageAIClient } from "voyageai";
 
-export const GEMINI_MODEL = "gemini-2.0-flash";
+export const GROQ_MODEL = "llama-3.3-70b-versatile";
 export const VOYAGE_MODEL = "voyage-code-3";
 export const EMBEDDING_DIM = 1024;
 
-export const geminiClient = new OpenAI({
-  apiKey: process.env.GEMINI_API_KEY,
-  baseURL: "https://generativelanguage.googleapis.com/v1beta/openai/",
+export const groqClient = new OpenAI({
+  apiKey: process.env.GROQ_API_KEY,
+  baseURL: "https://api.groq.com/openai/v1",
 });
 
 const voyageClient = new VoyageAIClient({
@@ -83,71 +83,66 @@ async function rateLimitedVoyageCall<T>(fn: () => Promise<T>, label: string): Pr
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Global rate-limit gate for ALL Gemini calls.
+// Global rate-limit gate for ALL Groq calls.
 //
-// Free-tier limits: 15 RPM · 1M TPM · 1,500 RPD on gemini-2.0-flash.
-// A minimum 5s spacing prevents burst 429s when multiple features fire
-// Gemini calls back-to-back (e.g. Voyage gate releases → chat + docs both
-// call Gemini at once). One retry after 30s for transient RPM 429s; if it
-// fails again it is almost certainly daily quota — throwing is the right call.
+// Free-tier limits for llama-3.3-70b-versatile: 30 RPM · 12K TPM · 1,000 RPD.
+// 2.5s spacing → max 24 RPM per instance, leaving ~20% headroom under the cap.
+// Retries: 15s (handles transient spikes), then 65s (full RPM window reset).
 // ─────────────────────────────────────────────────────────────────────────────
 
-// 8s spacing → max 7.5 RPM per instance, well under the 15 RPM free-tier cap.
-// Retries: 20s (handles transient spikes), then 65s (guarantees full RPM window
-// reset). If all three attempts fail it is almost certainly daily quota (RPD).
-const GEMINI_MIN_INTERVAL_MS = 8_000;
-const GEMINI_RETRY_WAITS_MS = [20_000, 65_000];
+const GROQ_MIN_INTERVAL_MS = 2_500;
+const GROQ_RETRY_WAITS_MS = [15_000, 65_000];
 
-let lastGeminiCallAt = 0;
-let geminiQueue: Promise<unknown> = Promise.resolve();
+let lastGroqCallAt = 0;
+let groqQueue: Promise<unknown> = Promise.resolve();
 
-async function waitForGeminiSlot(label: string): Promise<void> {
+async function waitForGroqSlot(label: string): Promise<void> {
   const now = Date.now();
-  const elapsed = now - lastGeminiCallAt;
-  if (elapsed < GEMINI_MIN_INTERVAL_MS && lastGeminiCallAt > 0) {
-    const wait = GEMINI_MIN_INTERVAL_MS - elapsed;
-    console.log(`[gemini] Rate-limit gate (${label}): waiting ${Math.ceil(wait / 1000)}s`);
+  const elapsed = now - lastGroqCallAt;
+  if (elapsed < GROQ_MIN_INTERVAL_MS && lastGroqCallAt > 0) {
+    const wait = GROQ_MIN_INTERVAL_MS - elapsed;
+    console.log(`[groq] Rate-limit gate (${label}): waiting ${Math.ceil(wait / 1000)}s`);
     await new Promise((r) => setTimeout(r, wait));
   }
-  lastGeminiCallAt = Date.now();
-  console.log(`[gemini] Calling API for: ${label}`);
+  lastGroqCallAt = Date.now();
+  console.log(`[groq] Calling API for: ${label}`);
 }
 
-export async function withGeminiRetry<T>(
+export async function withGroqRetry<T>(
   fn: () => Promise<T>,
-  label = "gemini",
+  label = "groq",
 ): Promise<T> {
-  // Serialize Gemini calls through a queue — prevents concurrent burst 429s
-  const prev = geminiQueue;
+  // Serialize Groq calls through a queue — prevents concurrent burst 429s
+  const prev = groqQueue;
   let release: () => void;
   const next = new Promise<void>((r) => {
     release = r;
   });
-  geminiQueue = prev.then(() => next);
+  groqQueue = prev.then(() => next);
 
   try {
     await prev;
-    await waitForGeminiSlot(label);
+    await waitForGroqSlot(label);
 
     let lastErr: unknown;
-    for (let attempt = 0; attempt <= GEMINI_RETRY_WAITS_MS.length; attempt++) {
+    for (let attempt = 0; attempt <= GROQ_RETRY_WAITS_MS.length; attempt++) {
       try {
         return await fn();
       } catch (err) {
         if (!isRateLimitError(err)) throw err;
         lastErr = err;
-        const waitMs = GEMINI_RETRY_WAITS_MS[attempt];
+        const waitMs = GROQ_RETRY_WAITS_MS[attempt];
         if (waitMs === undefined) break; // exhausted retries
         console.log(
-          `[gemini] 429 on ${label} (attempt ${attempt + 1}) — retrying after ${waitMs / 1000}s`,
+          `[groq] 429 on ${label} (attempt ${attempt + 1}) — retrying after ${waitMs / 1000}s`,
         );
         await new Promise((r) => setTimeout(r, waitMs));
-        lastGeminiCallAt = Date.now();
+        lastGroqCallAt = Date.now();
       }
     }
-    console.error(`[gemini] All attempts exhausted for ${label}`);
+    console.error(`[groq] All attempts exhausted for ${label}`);
     throw lastErr instanceof Error && isRateLimitError(lastErr)
-      ? new RateLimitedError("gemini")
+      ? new RateLimitedError("groq")
       : lastErr;
   } finally {
     release!();
@@ -158,15 +153,15 @@ export async function withGeminiRetry<T>(
 // Provider-aware rate-limit error wrapping.
 // ─────────────────────────────────────────────────────────────────────────────
 
-export type RateLimitProvider = "voyage" | "gemini" | "ai";
+export type RateLimitProvider = "voyage" | "groq" | "ai";
 
 const PROVIDER_MESSAGES: Record<RateLimitProvider, string> = {
   voyage:
     "Voyage AI free-tier rate limit hit (3 requests/min, 10K tokens/min). " +
     "Wait ~60 seconds and try again. To unlock higher limits, add a payment method at https://dashboard.voyageai.com (the 200M free tokens still apply).",
-  gemini:
-    "Gemini API quota exhausted. This is most likely the daily 1,500-request free-tier limit. " +
-    "Check your quota at https://aistudio.google.com/app/apikey — if it's daily, you must wait until tomorrow or enable billing on Google Cloud.",
+  groq:
+    "Groq API quota exhausted. This is most likely the daily request limit (1,000 RPD on free tier). " +
+    "Check your usage at https://console.groq.com/settings/limits — if it's daily, wait until reset or upgrade your plan.",
   ai:
     "AI service is rate-limited. Please wait a minute and try again, or check your provider quotas.",
 };
@@ -188,7 +183,7 @@ function detectProvider(err: unknown): RateLimitProvider {
     return "voyage";
   }
   if (e.constructor?.name === "RateLimitError" || e.constructor?.name === "APIError") {
-    return "gemini";
+    return "groq";
   }
   return "ai";
 }
