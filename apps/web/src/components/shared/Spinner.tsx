@@ -18,7 +18,7 @@ export function Spinner({
       role="status"
       aria-label="Loading"
       className={cn(
-        "animate-spin rounded-full border-brand border-t-transparent",
+        "animate-spin rounded-full border-[hsl(263_85%_65%)] border-t-transparent shadow-[0_0_12px_hsl(263_85%_60%/0.4)]",
         sizeClass[size],
         className,
       )}

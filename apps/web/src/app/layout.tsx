@@ -38,10 +38,22 @@ export default function RootLayout({
     <ClerkProvider
       publishableKey={process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY ?? ""}
     >
-      <html lang="en" className={inter.variable}>
-        <body className="font-sans antialiased">
+      <html lang="en" className={`${inter.variable} dark`} suppressHydrationWarning>
+        <body className="font-sans antialiased bg-background text-foreground">
           <QueryProvider>{children}</QueryProvider>
-          <Toaster richColors closeButton position="top-center" />
+          <Toaster
+            richColors
+            closeButton
+            position="top-center"
+            theme="dark"
+            toastOptions={{
+              style: {
+                background: "hsl(240 10% 6%)",
+                border: "1px solid hsl(240 6% 14%)",
+                color: "hsl(0 0% 98%)",
+              },
+            }}
+          />
         </body>
       </html>
     </ClerkProvider>

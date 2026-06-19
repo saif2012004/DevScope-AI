@@ -1,37 +1,36 @@
 import { CheckCircle, Loader2, XCircle } from "lucide-react";
 
-import { cn } from "@/lib/utils";
 import type { RepoStatus } from "@/types/repo";
 
 export function StatusBadge({ status }: { status: RepoStatus }) {
   switch (status) {
     case "PENDING":
       return (
-        <span className="inline-flex items-center rounded-md bg-muted px-2 py-0.5 text-xs font-medium text-muted-foreground">
+        <span className="inline-flex items-center gap-1.5 rounded-full border border-border/60 bg-white/[0.03] px-2.5 py-0.5 text-[11px] font-medium text-muted-foreground">
+          <span className="h-1.5 w-1.5 rounded-full bg-muted-foreground/60" />
           Pending
         </span>
       );
     case "INDEXING":
       return (
-        <span
-          className={cn(
-            "inline-flex items-center gap-1 rounded-md bg-amber-100 px-2 py-0.5 text-xs font-medium text-amber-900 dark:bg-amber-950 dark:text-amber-100",
-          )}
-        >
+        <span className="inline-flex items-center gap-1.5 rounded-full border border-amber-500/30 bg-amber-500/10 px-2.5 py-0.5 text-[11px] font-medium text-amber-300">
           <Loader2 className="h-3 w-3 animate-spin" aria-hidden />
-          Indexing...
+          Indexing…
         </span>
       );
     case "INDEXED":
       return (
-        <span className="inline-flex items-center gap-1 rounded-md bg-green-100 px-2 py-0.5 text-xs font-medium text-green-800 dark:bg-green-950 dark:text-green-200">
-          <CheckCircle className="h-3 w-3" aria-hidden />
+        <span className="inline-flex items-center gap-1.5 rounded-full border border-emerald-500/30 bg-emerald-500/10 px-2.5 py-0.5 text-[11px] font-medium text-emerald-300">
+          <span className="relative flex h-1.5 w-1.5">
+            <span className="absolute inset-0 animate-ping rounded-full bg-emerald-400 opacity-60" />
+            <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-emerald-400" />
+          </span>
           Ready
         </span>
       );
     case "FAILED":
       return (
-        <span className="inline-flex items-center gap-1 rounded-md bg-red-100 px-2 py-0.5 text-xs font-medium text-red-800 dark:bg-red-950 dark:text-red-200">
+        <span className="inline-flex items-center gap-1.5 rounded-full border border-red-500/30 bg-red-500/10 px-2.5 py-0.5 text-[11px] font-medium text-red-300">
           <XCircle className="h-3 w-3" aria-hidden />
           Failed
         </span>

@@ -6,6 +6,7 @@
 
 @layer base {
   :root {
+    /* Light tokens kept for future toggle, but we render dark by default */
     --background: 0 0% 100%;
     --foreground: 222.2 84% 4.9%;
     --card: 0 0% 100%;
@@ -25,45 +26,49 @@
     --border: 214.3 31.8% 91.4%;
     --input: 214.3 31.8% 91.4%;
     --ring: 222.2 84% 4.9%;
-    --radius: 0.5rem;
-    --chart-1: 12 76% 61%;
-    --chart-2: 173 58% 39%;
-    --chart-3: 197 37% 24%;
-    --chart-4: 43 74% 66%;
-    --chart-5: 27 87% 67%;
-    --sidebar-width: 240px;
-    --header-height: 56px;
-    --content-max-width: 1100px;
-    --brand-purple: 250 84% 54%;
-    --brand-purple-light: 250 84% 96%;
-    --brand-purple-dark: 250 84% 38%;
+    --radius: 0.75rem;
+    --chart-1: 250 84% 60%;
+    --chart-2: 199 89% 48%;
+    --chart-3: 142 71% 45%;
+    --chart-4: 38 92% 50%;
+    --chart-5: 340 75% 55%;
+    --sidebar-width: 248px;
+    --header-height: 60px;
+    --content-max-width: 1180px;
+    --brand-purple: 263 85% 60%;
+    --brand-purple-light: 263 85% 96%;
+    --brand-purple-dark: 263 85% 38%;
   }
 
   .dark {
-    --background: 222.2 84% 4.9%;
-    --foreground: 210 40% 98%;
-    --card: 222.2 84% 4.9%;
-    --card-foreground: 210 40% 98%;
-    --popover: 222.2 84% 4.9%;
-    --popover-foreground: 210 40% 98%;
-    --primary: 210 40% 98%;
-    --primary-foreground: 222.2 47.4% 11.2%;
-    --secondary: 217.2 32.6% 17.5%;
-    --secondary-foreground: 210 40% 98%;
-    --muted: 217.2 32.6% 17.5%;
-    --muted-foreground: 215 20.2% 65.1%;
-    --accent: 217.2 32.6% 17.5%;
-    --accent-foreground: 210 40% 98%;
-    --destructive: 0 62.8% 30.6%;
-    --destructive-foreground: 210 40% 98%;
-    --border: 217.2 32.6% 17.5%;
-    --input: 217.2 32.6% 17.5%;
-    --ring: 212.7 26.8% 83.9%;
-    --chart-1: 220 70% 50%;
-    --chart-2: 160 60% 45%;
-    --chart-3: 30 80% 55%;
-    --chart-4: 280 65% 60%;
-    --chart-5: 340 75% 55%;
+    /* Deeper near-black background — premium, Linear-tier */
+    --background: 240 10% 4%;
+    --foreground: 0 0% 98%;
+    --card: 240 10% 6%;
+    --card-foreground: 0 0% 98%;
+    --popover: 240 10% 6%;
+    --popover-foreground: 0 0% 98%;
+    --primary: 263 85% 65%;
+    --primary-foreground: 0 0% 100%;
+    --secondary: 240 6% 12%;
+    --secondary-foreground: 0 0% 98%;
+    --muted: 240 6% 10%;
+    --muted-foreground: 240 5% 65%;
+    --accent: 240 6% 14%;
+    --accent-foreground: 0 0% 98%;
+    --destructive: 0 72% 51%;
+    --destructive-foreground: 0 0% 98%;
+    --border: 240 6% 14%;
+    --input: 240 6% 14%;
+    --ring: 263 85% 65%;
+    --chart-1: 263 85% 65%;
+    --chart-2: 199 89% 58%;
+    --chart-3: 142 71% 55%;
+    --chart-4: 38 92% 60%;
+    --chart-5: 340 82% 60%;
+    --brand-purple: 263 85% 65%;
+    --brand-purple-light: 263 85% 14%;
+    --brand-purple-dark: 263 85% 50%;
   }
 }
 
@@ -71,7 +76,179 @@
   * {
     @apply border-border;
   }
+  html {
+    color-scheme: dark;
+  }
   body {
     @apply bg-background text-foreground;
+    font-feature-settings: "rlig" 1, "calt" 1, "ss01" 1;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+  ::selection {
+    background: hsl(var(--brand-purple) / 0.35);
+    color: hsl(var(--foreground));
   }
 }
+
+@layer utilities {
+  /* Animated grid background */
+  .bg-grid {
+    background-image:
+      linear-gradient(to right, hsl(var(--border) / 0.4) 1px, transparent 1px),
+      linear-gradient(to bottom, hsl(var(--border) / 0.4) 1px, transparent 1px);
+    background-size: 56px 56px;
+    mask-image: radial-gradient(ellipse 80% 60% at 50% 0%, #000 30%, transparent 80%);
+  }
+  .bg-grid-dense {
+    background-image:
+      linear-gradient(to right, hsl(var(--border) / 0.5) 1px, transparent 1px),
+      linear-gradient(to bottom, hsl(var(--border) / 0.5) 1px, transparent 1px);
+    background-size: 28px 28px;
+  }
+  .bg-dots {
+    background-image: radial-gradient(hsl(var(--border) / 0.7) 1px, transparent 1px);
+    background-size: 22px 22px;
+  }
+
+  /* Radial spotlight commonly used behind heroes */
+  .bg-hero-radial {
+    background-image: radial-gradient(
+      ellipse 80% 50% at 50% -10%,
+      hsl(263 85% 60% / 0.25),
+      transparent 60%
+    );
+  }
+
+  /* Aurora — animated multi-color blur */
+  .bg-aurora {
+    background:
+      radial-gradient(at 20% 30%, hsl(263 85% 60% / 0.35) 0px, transparent 50%),
+      radial-gradient(at 80% 20%, hsl(199 89% 58% / 0.25) 0px, transparent 50%),
+      radial-gradient(at 50% 80%, hsl(290 85% 60% / 0.25) 0px, transparent 50%);
+  }
+
+  /* Gradient text */
+  .text-gradient {
+    background: linear-gradient(
+      to bottom right,
+      hsl(0 0% 100%),
+      hsl(0 0% 100% / 0.7)
+    );
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+    color: transparent;
+  }
+  .text-gradient-brand {
+    background: linear-gradient(
+      to right,
+      hsl(263 90% 75%),
+      hsl(199 89% 65%),
+      hsl(290 90% 75%)
+    );
+    background-size: 200% auto;
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+    color: transparent;
+    animation: text-shimmer 6s linear infinite;
+  }
+
+  /* Glow ring on hover */
+  .glow-brand {
+    box-shadow:
+      0 0 0 1px hsl(var(--brand-purple) / 0.4),
+      0 0 24px hsl(var(--brand-purple) / 0.35),
+      0 0 60px hsl(var(--brand-purple) / 0.2);
+  }
+  .glow-brand-sm {
+    box-shadow: 0 0 18px hsl(var(--brand-purple) / 0.35);
+  }
+
+  /* Premium card hover */
+  .card-hover {
+    transition: transform 200ms ease, border-color 200ms ease, background-color 200ms ease, box-shadow 200ms ease;
+  }
+  .card-hover:hover {
+    transform: translateY(-2px);
+    border-color: hsl(var(--brand-purple) / 0.4);
+    box-shadow: 0 12px 40px -12px hsl(var(--brand-purple) / 0.25);
+  }
+
+  /* Shimmer button moving border */
+  .shimmer-border::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    padding: 1px;
+    background: conic-gradient(
+      from var(--shimmer-angle, 0deg),
+      transparent 0deg,
+      hsl(263 85% 70%) 60deg,
+      transparent 120deg
+    );
+    -webkit-mask:
+      linear-gradient(#000 0 0) content-box,
+      linear-gradient(#000 0 0);
+    -webkit-mask-composite: xor;
+            mask-composite: exclude;
+    animation: shimmer-rotate 3s linear infinite;
+    pointer-events: none;
+  }
+
+  /* Noise overlay for premium texture */
+  .noise::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    opacity: 0.025;
+    mix-blend-mode: overlay;
+    background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='160' height='160'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2'/></filter><rect width='100%' height='100%' filter='url(%23n)'/></svg>");
+  }
+}
+
+/* Keyframes */
+@keyframes text-shimmer {
+  to {
+    background-position: 200% center;
+  }
+}
+@keyframes shimmer-rotate {
+  to {
+    --shimmer-angle: 360deg;
+  }
+}
+@property --shimmer-angle {
+  syntax: "<angle>";
+  initial-value: 0deg;
+  inherits: false;
+}
+@keyframes pulse-glow {
+  0%, 100% { box-shadow: 0 0 0 0 hsl(var(--brand-purple) / 0.5); }
+  50% { box-shadow: 0 0 0 14px hsl(var(--brand-purple) / 0); }
+}
+@keyframes float-slow {
+  0%, 100% { transform: translateY(0) }
+  50% { transform: translateY(-8px) }
+}
+@keyframes blob {
+  0%, 100% { transform: translate(0,0) scale(1); }
+  33% { transform: translate(30px,-50px) scale(1.1); }
+  66% { transform: translate(-20px,20px) scale(0.9); }
+}
+.animate-pulse-glow { animation: pulse-glow 2s ease-in-out infinite; }
+.animate-float-slow { animation: float-slow 6s ease-in-out infinite; }
+.animate-blob { animation: blob 18s ease-in-out infinite; }
+
+/* Scrollbar polish */
+::-webkit-scrollbar { width: 10px; height: 10px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb {
+  background: hsl(var(--border));
+  border-radius: 10px;
+  border: 2px solid hsl(var(--background));
+}
+::-webkit-scrollbar-thumb:hover { background: hsl(var(--muted-foreground) / 0.6); }

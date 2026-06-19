@@ -197,14 +197,14 @@ function ChatPageInner() {
   // ── Main layout ─────────────────────────────────────────────────────────
 
   return (
-    <div className="flex h-[calc(100svh-var(--header-height)-3rem)] overflow-hidden rounded-xl border border-border">
+    <div className="flex h-[calc(100svh-var(--header-height)-4rem)] overflow-hidden rounded-2xl border border-border/60 bg-card/40 backdrop-blur-xl shadow-[0_20px_60px_-20px_hsl(263_85%_60%/0.15)]">
       {/* ── Sidebar ── */}
-      <div className="flex w-60 shrink-0 flex-col border-r border-border bg-background">
+      <div className="flex w-64 shrink-0 flex-col border-r border-border/60 bg-background/40">
         {/* Repo selector */}
-        <div className="border-b border-border p-3">
+        <div className="border-b border-border/60 p-3">
           <label
             htmlFor="repo-select"
-            className="mb-1.5 block text-xs font-medium text-muted-foreground"
+            className="mb-1.5 block text-[11px] font-medium uppercase tracking-wider text-muted-foreground"
           >
             Repository
           </label>
@@ -212,7 +212,7 @@ function ChatPageInner() {
             id="repo-select"
             value={selectedRepoId}
             onChange={(e) => handleRepoChange(e.target.value)}
-            className="w-full rounded-md border border-input bg-background px-2.5 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
+            className="w-full rounded-lg border border-border/80 bg-card/80 px-2.5 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[hsl(263_85%_60%/0.4)]"
           >
             {indexedRepos.map((repo) => (
               <option key={repo.id} value={repo.id}>
@@ -252,10 +252,10 @@ function ChatPageInner() {
                     role="button"
                     tabIndex={0}
                     className={cn(
-                      "group flex cursor-pointer items-center gap-2 rounded-md px-2 py-1.5 transition-colors",
+                      "group flex cursor-pointer items-center gap-2 rounded-lg px-2.5 py-2 transition-colors",
                       activeSessionId === session.id
-                        ? "bg-accent text-foreground"
-                        : "text-muted-foreground hover:bg-accent hover:text-foreground",
+                        ? "border border-[hsl(263_85%_60%/0.3)] bg-[hsl(263_85%_60%/0.12)] text-foreground"
+                        : "border border-transparent text-muted-foreground hover:bg-white/[0.04] hover:text-foreground",
                     )}
                     onClick={() => handleSelectSession(session.id)}
                     onKeyDown={(e) => {
@@ -295,15 +295,18 @@ function ChatPageInner() {
       {/* ── Chat area ── */}
       <div className="flex flex-1 flex-col overflow-hidden">
         {/* Header bar */}
-        <div className="flex items-center gap-2 border-b border-border px-4 py-2.5">
-          <Bot className="h-4 w-4 text-brand" aria-hidden />
+        <div className="flex items-center gap-2 border-b border-border/60 bg-background/30 px-4 py-3 backdrop-blur-sm">
+          <div className="flex h-6 w-6 items-center justify-center rounded-md bg-[hsl(263_85%_60%/0.15)]">
+            <Bot className="h-3.5 w-3.5 text-[hsl(263_85%_75%)]" aria-hidden />
+          </div>
           <span className="text-sm font-medium">
             {selectedRepo
               ? `${selectedRepo.githubOwner}/${selectedRepo.githubName}`
               : "AI Chat"}
           </span>
           {selectedRepo && (
-            <span className="ml-auto text-xs text-muted-foreground">
+            <span className="ml-auto flex items-center gap-1.5 rounded-full border border-border/60 bg-white/[0.02] px-2.5 py-1 text-xs text-muted-foreground">
+              <span className="h-1.5 w-1.5 rounded-full bg-emerald-400" />
               {selectedRepo.totalChunks.toLocaleString()} chunks indexed
             </span>
           )}
@@ -318,19 +321,25 @@ function ChatPageInner() {
           ) : messages.length === 0 && !isStreaming ? (
             /* Empty state */
             <div className="flex h-full flex-col items-center justify-center text-center">
-              <Bot
-                className="mb-3 h-10 w-10 text-muted-foreground"
-                strokeWidth={1.5}
-                aria-hidden
-              />
-              <h3 className="font-semibold">Ask anything about this codebase</h3>
-              <p className="mt-1 max-w-sm text-sm text-muted-foreground">
+              <div className="relative mb-4">
+                <div className="absolute inset-0 -m-3 animate-pulse rounded-full bg-[hsl(263_85%_60%/0.15)] blur-xl" />
+                <div className="relative flex h-14 w-14 items-center justify-center rounded-2xl border border-[hsl(263_85%_60%/0.3)] bg-[hsl(263_85%_60%/0.12)] backdrop-blur">
+                  <Bot
+                    className="h-7 w-7 text-[hsl(263_85%_75%)]"
+                    strokeWidth={1.5}
+                    aria-hidden
+                  />
+                </div>
+              </div>
+              <h3 className="text-lg font-semibold">Ask anything about this codebase</h3>
+              <p className="mt-2 max-w-md text-sm text-muted-foreground">
                 I have access to{" "}
-                {selectedRepo?.totalChunks.toLocaleString() ?? "—"} code
-                chunks and can explain logic, trace call flows, and find
-                patterns.
+                <span className="font-medium text-foreground">
+                  {selectedRepo?.totalChunks.toLocaleString() ?? "—"}
+                </span>{" "}
+                code chunks and can explain logic, trace call flows, and find patterns.
               </p>
-              <div className="mt-4 flex w-full max-w-sm flex-col gap-2 text-left">
+              <div className="mt-6 grid w-full max-w-md gap-2 text-left">
                 {[
                   "What does this codebase do?",
                   "Explain the main architecture",
@@ -339,9 +348,10 @@ function ChatPageInner() {
                   <button
                     key={q}
                     type="button"
-                    className="rounded-lg border border-border px-3 py-2 text-left text-sm text-muted-foreground transition-colors hover:border-brand hover:text-foreground"
+                    className="group rounded-xl border border-border/60 bg-card/40 px-3.5 py-2.5 text-left text-sm text-muted-foreground backdrop-blur transition-all hover:border-[hsl(263_85%_60%/0.4)] hover:bg-[hsl(263_85%_60%/0.08)] hover:text-foreground hover:shadow-[0_8px_30px_-12px_hsl(263_85%_60%/0.4)]"
                     onClick={() => setInputValue(q)}
                   >
+                    <span className="mr-2 text-[hsl(263_85%_75%)] opacity-60 group-hover:opacity-100">›</span>
                     {q}
                   </button>
                 ))}
@@ -366,7 +376,7 @@ function ChatPageInner() {
         </div>
 
         {/* Input */}
-        <div className="border-t border-border p-4">
+        <div className="border-t border-border/60 bg-background/30 p-4 backdrop-blur-sm">
           {!selectedRepoId ? (
             <p className="text-center text-sm text-muted-foreground">
               Select a repository above to start chatting

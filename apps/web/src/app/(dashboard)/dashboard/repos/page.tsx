@@ -8,6 +8,7 @@ import { AddRepoModal } from "@/components/repos/AddRepoModal";
 import { RepoCard } from "@/components/repos/RepoCard";
 import { RepoCardSkeleton } from "@/components/repos/RepoCardSkeleton";
 import { UsageBanner } from "@/components/repos/UsageBanner";
+import { Stagger, StaggerItem } from "@/components/motion/primitives";
 import { EmptyState } from "@/components/shared/EmptyState";
 import { PageHeader } from "@/components/shared/PageHeader";
 import {
@@ -114,15 +115,16 @@ export default function ReposPage() {
           }
         />
 
-        <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
+        <Stagger
+          className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3"
+          stagger={0.05}
+        >
           {repos.map((repo) => (
-            <RepoCard
-              key={repo.id}
-              repo={repo}
-              onDelete={(r) => setDeleteTarget(r)}
-            />
+            <StaggerItem key={repo.id}>
+              <RepoCard repo={repo} onDelete={(r) => setDeleteTarget(r)} />
+            </StaggerItem>
           ))}
-        </div>
+        </Stagger>
 
         {isFreePlan ? <UsageBanner repoCount={repos.length} /> : null}
       </div>

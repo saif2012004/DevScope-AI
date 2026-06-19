@@ -31,11 +31,15 @@ export function Logo({
   return (
     <Link
       href="/dashboard"
-      className={cn("flex items-center gap-2.5", className)}
+      className={cn("group flex items-center gap-2.5", className)}
     >
       <div
         className={cn(
-          "flex shrink-0 items-center justify-center rounded-md bg-brand font-semibold text-white",
+          "relative flex shrink-0 items-center justify-center rounded-lg font-bold text-white",
+          "bg-gradient-to-br from-[hsl(263_85%_70%)] via-[hsl(263_85%_60%)] to-[hsl(263_85%_45%)]",
+          "shadow-[0_4px_18px_-4px_hsl(263_85%_60%/0.7)]",
+          "ring-1 ring-white/10",
+          "transition-shadow group-hover:shadow-[0_6px_24px_-4px_hsl(263_85%_60%/0.9)]",
           cfg.box,
           cfg.mark,
         )}
@@ -44,7 +48,7 @@ export function Logo({
       </div>
       <span className={cn("font-semibold leading-none tracking-tight", cfg.text)}>
         DevScope
-        <span className="font-bold text-brand"> AI</span>
+        <span className="text-gradient-brand font-bold"> AI</span>
       </span>
     </Link>
   );
