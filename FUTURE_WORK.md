@@ -40,5 +40,6 @@ Scaffolded 2026-06-17 with 5 starter cases. Currently 5/5 passing on the NLP_A2 
 ## Misc
 
 - [ ] Clean up `apps/api/src/scripts/test-groq.ts` (the one-off smoke test from the Groq migration) — keep for re-validation after any provider/model change, or delete if `eval-chat.ts` replaces it.
-- [ ] Rotate Groq API key (it appeared in chat transcript on 2026-06-17).
+- [x] Rotate Groq API key (it appeared in chat transcript on 2026-06-17) — done 2026-06-18.
 - [ ] Update `memory/project_overview.md` — it still says "AI provider: Grok (xAI)" from 52 days ago. Reality is now Groq (Llama 3.3 70B via OpenAI-compatible SDK).
+- [ ] `docker-compose.yml` still declares `OPENAI_API_KEY` for the `api` service env — stale after the Groq migration. Replace with `GROQ_API_KEY` and `VOYAGE_API_KEY` so the full-stack profile (`npm run docker:up:all`) actually works without manual env edits.
